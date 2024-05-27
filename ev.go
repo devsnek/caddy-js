@@ -40,6 +40,7 @@ func (loop *EventLoop) Run() {
 }
 
 func (loop *EventLoop) Stop() {
+	loop.vm.Interrupt("EventLoop::Stop")
 	close(loop.stop)
 }
 
