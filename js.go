@@ -19,7 +19,7 @@ import (
 	URL "github.com/nlnwa/whatwg-url/url"
 )
 
-//go:embed runtime/output/runtime.js
+//go:embed runtime/output/index.js
 var runtimeSource string
 
 type RT struct {

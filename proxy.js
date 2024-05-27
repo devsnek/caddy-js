@@ -1,13 +1,5 @@
 async function handler(request) {
-  const r = await new Promise((resolve, reject) => {
-    __caddy_fetch(request.method, request.url, request.headers, null, (r, e) => {
-      if (e) {
-        reject(e);
-      } else {
-        resolve(r);
-      }
-    });
-  });
+  const r = await fetch(request);
   r.body = __caddy_decode(r.body);
   return {
     status: 200,
