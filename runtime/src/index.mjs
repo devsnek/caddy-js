@@ -1,3 +1,4 @@
+import './encoding.mjs';
 import './fetch.mjs';
 
 function __caddy_handle_request(request, callback) {

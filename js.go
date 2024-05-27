@@ -92,9 +92,15 @@ func (js *JS) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.H
 
 			w.WriteHeader(int(obj.Get("status").ToFloat()))
 
-			body := obj.Get("body")
-			if !goja.IsNull(body) {
-				w.Write(body.Export().(goja.ArrayBuffer).Bytes())
+			jsBody := obj.Get("body")
+			if !goja.IsNull(jsBody) {
+				var body []byte
+				err := vm.ExportTo(jsBody, &body)
+				if err != nil {
+					waiter <- err
+					return
+				}
+				w.Write(body)
 			}
 
 			close(waiter)
@@ -132,7 +138,7 @@ func (js *JS) makeRuntime() (*RT, error) {
 	vm := rt.Loop.vm
 
 	vm.Set("__caddy_encode", func(data string) goja.ArrayBuffer { return vm.NewArrayBuffer([]byte(data)) })
-	vm.Set("__caddy_decode", func(data goja.ArrayBuffer) string { return string(data.Bytes()) })
+	vm.Set("__caddy_decode", func(data []byte) string { return string(data) })
 	vm.Set("__caddy_url_parse", URL.Parse)
 	vm.Set("__caddy_url_parse_ref", URL.ParseRef)
 
@@ -175,7 +181,11 @@ func (js *JS) makeRuntime() (*RT, error) {
 
 		var body []byte
 		if !goja.IsNull(jsBody) {
-			body = jsBody.Export().(goja.ArrayBuffer).Bytes()
+			err := vm.ExportTo(jsBody, &body)
+			if err != nil {
+				callback(nil, err)
+				return
+			}
 		}
 
 		go func() {
