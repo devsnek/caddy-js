@@ -1,0 +1,10 @@
+{
+  admin off
+}
+
+:8080 {
+  route / {
+    js "./proxy.js"
+  }
+  respond "meow"
+}
