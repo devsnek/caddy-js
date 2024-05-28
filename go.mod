@@ -5,6 +5,7 @@ go 1.22.3
 require (
 	github.com/caddyserver/caddy/v2 v2.7.6
 	github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2
+	github.com/nlnwa/whatwg-url v0.4.1
 )
 
 require (
@@ -65,7 +66,6 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/nlnwa/whatwg-url v0.4.1 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.15.1 // indirect

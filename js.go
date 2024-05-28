@@ -90,6 +90,13 @@ func (js *JS) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.H
 
 			obj := result.ToObject(vm)
 
+			headers := obj.Get("headers").ToObject(vm)
+			for _, k := range headers.Keys() {
+				var v string
+				vm.ExportTo(headers.Get(k), &v)
+				w.Header()[k] = []string{v}
+			}
+
 			w.WriteHeader(int(obj.Get("status").ToFloat()))
 
 			jsBody := obj.Get("body")
@@ -137,6 +144,26 @@ func (js *JS) makeRuntime() (*RT, error) {
 
 	vm := rt.Loop.vm
 
+	vm.Set("__caddy_log", func(level string, msg string) {
+		log := caddy.Log().Named("js")
+		switch level {
+		case "debug":
+			log.Debug(msg)
+			break
+		case "info":
+			log.Info(msg)
+			break
+		case "warn":
+			log.Warn(msg)
+			break
+		case "error":
+			log.Error(msg)
+			break
+		case "panic":
+			log.Panic(msg)
+			break
+		}
+	})
 	vm.Set("__caddy_encode", func(data string) goja.ArrayBuffer { return vm.NewArrayBuffer([]byte(data)) })
 	vm.Set("__caddy_decode", func(data []byte) string { return string(data) })
 	vm.Set("__caddy_url_parse", URL.Parse)
@@ -230,7 +257,6 @@ func (js *JS) makeRuntime() (*RT, error) {
 				res = new(http.Response)
 				res.StatusCode = rw.StatusCode
 				res.Header = rw.Headers
-				res.ContentLength = int64(rw.Body.Len())
 				res.Body = io.NopCloser(rw.Body)
 			} else {
 				res, err = http.DefaultClient.Do(req)

@@ -1,8 +1,5 @@
 async function handler(request) {
   const r = await fetch(request);
-  r.body = new TextDecoder().decode(r.body);
-  return {
-    status: 200,
-    body: __caddy_encode(`hello there ${JSON.stringify(r)}`),
-  };
+  const text = await r.text();
+  return new Response(`hello there ${text}`, { status: 200 });
 }
