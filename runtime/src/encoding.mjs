@@ -4,7 +4,7 @@ class TextEncoder {
   }
 
   encode(string) {
-    return new Uint8Array(__caddy_encode(string));
+    return __caddy_encode(string);
   }
 }
 

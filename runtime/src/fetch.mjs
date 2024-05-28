@@ -434,12 +434,13 @@ Object.defineProperties(Response.prototype, {
 async function fetch(init, opts) {
   const request = new Request(init, opts);
 
+  const body = request.body ? await request.arrayBuffer() : null;
   const data = await new Promise((resolve, reject) => {
     const headers = {};
     request.headers.forEach((k, v) => {
       headers[k] = v;
     });
-    __caddy_fetch(request.method, request.url, headers, null, (r, e) => {
+    __caddy_fetch(request.method, request.url, headers, body, (r, e) => {
       if (e) {
         reject(e);
       } else {

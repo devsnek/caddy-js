@@ -82,31 +82,19 @@ func (js *JS) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.H
 			headers.Set(k, strings.Join(v, ", "))
 		}
 
-		_, err := rt.Handler(goja.Null(), request, vm.ToValue(func(result goja.Value, err goja.Value) {
+		_, err := rt.Handler(goja.Null(), request, vm.ToValue(func(status int, headers map[string]string, body []byte, err goja.Value) {
 			if !goja.IsNull(err) {
 				waiter <- fmt.Errorf("JavaScript exception: %v", err)
 				return
 			}
 
-			obj := result.ToObject(vm)
-
-			headers := obj.Get("headers").ToObject(vm)
-			for _, k := range headers.Keys() {
-				var v string
-				vm.ExportTo(headers.Get(k), &v)
+			for k, v := range headers {
 				w.Header()[k] = []string{v}
 			}
 
-			w.WriteHeader(int(obj.Get("status").ToFloat()))
+			w.WriteHeader(status)
 
-			jsBody := obj.Get("body")
-			if !goja.IsNull(jsBody) {
-				var body []byte
-				err := vm.ExportTo(jsBody, &body)
-				if err != nil {
-					waiter <- err
-					return
-				}
+			if body != nil {
 				w.Write(body)
 			}
 
@@ -164,12 +152,12 @@ func (js *JS) makeRuntime() (*RT, error) {
 			break
 		}
 	})
-	vm.Set("__caddy_encode", func(data string) goja.ArrayBuffer { return vm.NewArrayBuffer([]byte(data)) })
+	vm.Set("__caddy_encode", func(data string) []byte { return []byte(data) })
 	vm.Set("__caddy_decode", func(data []byte) string { return string(data) })
 	vm.Set("__caddy_url_parse", URL.Parse)
 	vm.Set("__caddy_url_parse_ref", URL.ParseRef)
 
-	doFetch := func(method string, url string, headers map[string]string, jsBody goja.Value, jsCallback func(goja.Value, goja.Value)) {
+	doFetch := func(method string, url string, headers map[string]string, body []byte, jsCallback func(goja.Value, goja.Value)) {
 		ctx := rt.Loop.AsyncCtx.Grab().(*AsyncContext)
 
 		callback := func(response *http.Response, err error) {
@@ -191,7 +179,7 @@ func (js *JS) makeRuntime() (*RT, error) {
 						jsCallback(goja.Null(), vm.ToValue(err))
 						return
 					}
-					obj.Set("body", vm.NewArrayBuffer(data))
+					obj.Set("body", data)
 				}
 
 				obj.Set("status", float64(response.StatusCode))
@@ -204,15 +192,6 @@ func (js *JS) makeRuntime() (*RT, error) {
 
 				jsCallback(obj, goja.Null())
 			})
-		}
-
-		var body []byte
-		if !goja.IsNull(jsBody) {
-			err := vm.ExportTo(jsBody, &body)
-			if err != nil {
-				callback(nil, err)
-				return
-			}
 		}
 
 		go func() {
@@ -265,7 +244,6 @@ func (js *JS) makeRuntime() (*RT, error) {
 			callback(res, nil)
 		}()
 	}
-
 	vm.Set("__caddy_fetch", doFetch)
 
 	_, err := vm.RunScript("runtime", runtimeSource)

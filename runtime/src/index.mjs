@@ -15,18 +15,18 @@ function __caddy_handle_request(rawRequest, callback) {
         response.headers.forEach((k, v) => {
           headers[k] = v;
         });
-        const result = {
-          status: response.status,
+        callback(
+          response.status,
           headers,
-          body: response.body ? await response.arrayBuffer() : null,
-        };
-        callback(result, null);
+          response.body ? await response.arrayBuffer() : null,
+          null,
+        );
       })
       .catch((error) => {
-        callback(null, error);
+        callback(null, null, null, error);
       });
   } catch (error) {
-    callback(null, error);
+    callback(null, null, null, error);
   }
 }
 
