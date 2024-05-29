@@ -20,8 +20,8 @@ A server which responds "website with js"
 ```js
 // proxy.js
 async function handler(request) {
-  const next = await fetch(request);
-  const body = await next.text();
-  return new Response(`${body} with js`, upstream);
+  const res = await fetch(request);
+  const body = await res.text();
+  return new Response(`${body} with js`, res);
 }
 ```
